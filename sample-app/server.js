@@ -3,6 +3,8 @@ const cors = require('cors');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const { v4: uuidv4 } = require('uuid');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./swagger');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -12,7 +14,24 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// In-memory data store
+// ── Swagger UI ──────────────────────────────────────────────────────────────
+app.use(
+  '/api-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    customSiteTitle: 'TechMart API Docs',
+    customCss: `
+      .swagger-ui .topbar { background-color: #4f46e5; }
+      .swagger-ui .topbar .download-url-wrapper { display: none; }
+    `,
+    swaggerOptions: { persistAuthorization: true },
+  })
+);
+
+// Expose the raw OpenAPI JSON for tooling (Postman, etc.)
+app.get('/api-docs.json', (_req, res) => res.json(swaggerSpec));
+
+// ── In-memory data store ────────────────────────────────────────────────────
 const products = [
   { id: 1, name: 'Wireless Headphones', price: 79.99, category: 'electronics', image: 'headphones.svg', stock: 15 },
   { id: 2, name: 'Mechanical Keyboard', price: 129.99, category: 'electronics', image: 'keyboard.svg', stock: 8 },
@@ -250,4 +269,5 @@ app.get('/api/health', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`TechMart server running on http://localhost:${PORT}`);
+  console.log(`API docs available at http://localhost:${PORT}/api-docs`);
 });
